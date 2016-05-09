@@ -13,26 +13,31 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 /**
  *
  * @author test
  */
-public class GalleryFrame extends javax.swing.JFrame {
+public class WorkspaceFrame extends javax.swing.JFrame {
 
     public static List<String> artists = Arrays.asList("Cezanne", "Gaugin", "Seurat", "Van Gogh");
+    BufferedImage currImg;
+    boolean loading = false;
 
     /**
      * Creates new form GalleryFrame
      */
-    public GalleryFrame() {
+    public WorkspaceFrame() {
         initComponents();
         setSize(500, 500);
         setVisible(true);
-
+        initialize();
 
     }
 
@@ -103,18 +108,25 @@ public class GalleryFrame extends javax.swing.JFrame {
     private void classifyButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_classifyButtonActionPerformed
         classifyNewImage();
     }//GEN-LAST:event_classifyButtonActionPerformed
-    BufferedImage currImg;
 
     @Override
     public void paint(Graphics g) {
+
         super.paint(g);
-        if (currImg != null) {
+        if (loading) {
+            System.out.println("entered paint method");
+            g.drawImage(loadingIMG, 100, 100, this);
+            System.out.println("Paint: paintedLoadingImg");
+        } else if (currImg != null) {
             g.drawImage(currImg, 100, 100, this);
-            if (percents != null) {
+            if (results != null) {
                 DecimalFormat df = new DecimalFormat("#0.00");
-                for (int p = 0; p < percents.length; p++) {
-                    String peF = percents[p]+"\nenter";
-                    g.drawString(peF, 300, 100 + 50 * p);
+                Arrays.sort(results);
+                for (int p = 0; p < results.length; p++) {
+                    String catg = results[p].getCategory();
+                    g.drawString(catg, 250, 100 + 30 * p);
+                    String per = ""+df.format(results[p].getPercentage())+"%";
+                    g.drawString(per, 320, 100 + 30 * p);
                 }
 
             }
@@ -138,20 +150,21 @@ public class GalleryFrame extends javax.swing.JFrame {
                 }
             }
         } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(GalleryFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(WorkspaceFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(GalleryFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(WorkspaceFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(GalleryFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(WorkspaceFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(GalleryFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(WorkspaceFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
+        //</editor-fold>
         //</editor-fold>
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new GalleryFrame().setVisible(true);
+                new WorkspaceFrame().setVisible(true);
             }
         });
     }
@@ -168,6 +181,7 @@ public class GalleryFrame extends javax.swing.JFrame {
 
         File artistDir = promptUserForArtistDir();
         if (artistDir != null) {
+            lastPathUsed = artistDir.getPath();
             System.out.println("Artist Choice: " + artistDir.getName());
             String style = promptUserForStyle(artistDir.getName());
             System.out.println("The style is: " + style);
@@ -177,9 +191,10 @@ public class GalleryFrame extends javax.swing.JFrame {
         }
 
     }
+    String lastPathUsed = "src";
 
     private File promptUserForArtistDir() {
-        JFileChooser chooser = new JFileChooser();
+        JFileChooser chooser = new JFileChooser(lastPathUsed);
         chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         int returnVal = chooser.showOpenDialog(this);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
@@ -187,6 +202,7 @@ public class GalleryFrame extends javax.swing.JFrame {
         } else {
             return null;
         }
+
     }
 
     private String promptUserForStyle(String artist_name) {
@@ -202,13 +218,13 @@ public class GalleryFrame extends javax.swing.JFrame {
                 styles,
                 styles[0]);
 
-        // favoritePizza will be null if the user clicks Cancel
+        
         return selectedStyle;
     }
 
     private void saveArtistToSystem(File artistDir) {
         String savePath = "src/images/" + artistDir.getName();
-        
+
         File dir = new File(savePath);
 
         // attempt to create the directory here
@@ -237,26 +253,52 @@ public class GalleryFrame extends javax.swing.JFrame {
         }
     }
 
-    String[] percents = null;
+    StringDouble[] results = null;
 
     private void classifyNewImage() {
+        
+
         File imageFile = null;
-        JFileChooser chooser = new JFileChooser();
+        JFileChooser chooser = new JFileChooser(lastPathUsed);
+        
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("TIFF", "tiff");
+        chooser.setFileFilter(filter);
+
         chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         int returnVal = chooser.showOpenDialog(this);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
+            loading = true;
+            repaint();
+            System.out.println("painted loading screen");
             imageFile = chooser.getSelectedFile();
+            lastPathUsed = imageFile.getPath();
             try {
                 currImg = ImageIO.read(imageFile);
+
             } catch (IOException e) {
                 System.out.println("Wasn't able to read file");
             }
-            repaint();
-            percents = CommandParser.classify(imageFile.getPath());
+            ClassifyDialog cd = new ClassifyDialog(this, false);
+            cd.setLabel("Classification in progress");
+            results = CommandParser.classify(imageFile.getPath());
+            cd.setLabel("Classification done");
+            loading = false;
+            //repaint();
+            System.out.println("painted image");
+
         } else {
             System.out.println("No image chosen");
         }
 
-       
+    }
+    BufferedImage loadingIMG = null;
+
+    private void initialize() {
+        File imageFile = new File("src/loading.jpeg");
+        try {
+            ImageIO.read(imageFile);
+        } catch (IOException ex) {
+            Logger.getLogger(WorkspaceFrame.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 }

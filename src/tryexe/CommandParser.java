@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  */
 public class CommandParser {
 
-    public static String[] classify(String imagePath) {
+    public static StringDouble[] classify(String imagePath) {
         Runtime rt = Runtime.getRuntime();
         // String commands0 = {''
 
@@ -35,7 +35,7 @@ public class CommandParser {
             while ((s = stdInput.readLine()) != null) {
                 fullText += s + "\n";
             }
-            int numOfClasses = GalleryFrame.artists.size();
+            int numOfClasses = WorkspaceFrame.artists.size();
             //System.out.println(""+fullText);
             String[] ss = fullText.split("----------");
             String desired = ss[5];
@@ -44,18 +44,17 @@ public class CommandParser {
             // System.out.println("2: "+desired);
             String[] desiredSplit = desired.split("\t");
             double[] clasfDecimals = new double[numOfClasses];
-            DecimalFormat df = new DecimalFormat("#0.00");
-            String[] percents = new String[numOfClasses];
+           
+            StringDouble[] results = new StringDouble[numOfClasses];
             for (int i = 0; i < numOfClasses; i++) {
                 double dec = Double.parseDouble(desiredSplit[i + 2]);
                 double per = dec * 100;
-                String result = GalleryFrame.artists.get(i)+":\t\t"+df.format(per)+"%";
-                percents[i] = result;
+                results[i] = new StringDouble(WorkspaceFrame.artists.get(i), per);
                 
             }
             
 
-            return percents;
+            return results;
 
 // read any errors from the attempted command
 //            System.out.println("Here is the standard error of the command (if any):\n");

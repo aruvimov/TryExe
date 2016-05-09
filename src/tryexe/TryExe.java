@@ -8,6 +8,8 @@ package tryexe;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import javax.imageio.ImageIO;
 
 /**
@@ -22,7 +24,10 @@ public class TryExe {
     public static void main(String[] args) {
        //convertToTiff();
        //CommandParser.runCommand();
-       GalleryFrame gf = new GalleryFrame();
+       //WorkspaceFrame gf = new WorkspaceFrame();
+       testImageIO();
+
+    
         
     }
     static void convertToTiff() {
@@ -35,6 +40,17 @@ public class TryExe {
         boolean success = Utility.saveTiff(filename, img);
         System.out.println("success = " + success);
     }
+        public static void testImageIO() {
+        try {
+            File readFile = new File("src/test.tiff");
+            BufferedImage img = ImageIO.read(readFile);
+            File writeFile = new File("src/test.png");
+            ImageIO.write(img, "png", writeFile);
+        } catch (IOException ex) {
+            System.out.println("IMAGE WRITE FAILED: "+ex);
+        }
+    }
+    
 
 
 
